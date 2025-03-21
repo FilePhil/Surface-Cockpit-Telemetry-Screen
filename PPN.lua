@@ -53,16 +53,17 @@ end
 
 local function init()  				
 	gspd_id = getTelemetryId("GSpd")
-	--number of satellites crossfire
+
 	gpssatId = getTelemetryId("Sats")
-	--if Stats can't be read, try to read Tmp2 (number of satellites SBUS/FRSKY)
+  
+  lqi_id = getTelemetryId("RQly")
 	if (gpssatId == -1) then gpssatId = getTelemetryId("Tmp2") end	
 end
 
 
 local function background()
   counter = counter +1
-
+  -- Get GPS related data
   sat_cnt = getValue(gpssatId)
   -- read out the Speed and Calculate the max and average
   speed_current = rnd(getValue(gspd_id),1)
@@ -76,6 +77,9 @@ local function background()
   end 
 
   speed_max = math.max(speed_max,speed_current)
+
+  -- Get Link Quality
+  lqi_current = getValue(lqi_id)
 
 
 end
@@ -96,38 +100,53 @@ local function run(event)
 	end 	
 	
 	-- create screen
-	lcd.drawLine(0,0,0,95, SOLID, FORCE)	
-	lcd.drawLine(127,0,127,95, SOLID, FORCE)	
 	
-	lcd.drawText(2,1,"Tele: " ,SMLSIZE)		
-	lcd.drawFilledRectangle(1,0, 126, 8, GREY_DEFAULT)
+  --
 	
-
-	lcd.drawLine(42,8, 42, 32, SOLID, FORCE)		
 	
-	lcd.drawLine(0,32, 128, 32, SOLID, FORCE)				
+  sat_text =  string.format("Sat:%2d ",sat_cnt)
 
-	lcd.drawLine(0,60, 128, 60, SOLID, FORCE)
+  h_offset = 2
+  text_offset = 2
+  row_0 = 0
+  row_1 = 10
+  row_2 = 20
+  row_3 = 30
+  row_4 = 55
 
-	lcd.drawLine(0,95,127,95, SOLID, FORCE)	
+  --Lines
+  --lcd.drawLine(0,row_0,LCD_W,row_0, SOLID, FORCE)	
+  lcd.drawLine(0,row_1,LCD_W,row_1, SOLID, FORCE)	
+  lcd.drawLine(LCD_W/2,row_2,LCD_W,row_2, SOLID, FORCE)	
+  lcd.drawLine(0,row_3,LCD_W,row_3, SOLID, FORCE)	
+  lcd.drawLine(0,row_4,LCD_W,row_4, SOLID, FORCE)	
+  
+  -- General Row
+  lcd.drawFilledRectangle(0,0, LCD_W, row_1, GREY_DEFAULT)
+  row_0_text =  string.format("Sat:%2d  LQI:%3d %%  TM: 00:00:00",sat_cnt,lqi_current)
+  lcd.drawText(h_offset,row_0+text_offset,row_0_text ,SMLSIZE + INVERS)		
+ 
+
 	
 	--update screen data
-	sat_text =  string.format("Sat:%d ",sat_cnt)
-  lcd.drawText(4,10, sat_text, SMLSIZE)
+ 
 
-
-
-  current_speed_text =  string.format("Spd:%.1fkm/h",speed_current)
-  lcd.drawText(45,10, current_speed_text, SMLSIZE)
-
-  average_speed_text =  string.format("Avg:%.1fkm/h",speed_average)
-  lcd.drawText(45,18, average_speed_text, SMLSIZE)
   
+  
+  mid = 63
+  maxRow = 36
+  db_width = 42
+  db_height = 16
 
+    current_speed_text =  string.format("Spd: %dkm/h",rnd(speed_current,0))
+    lcd.drawText(h_offset,row_4+text_offset, current_speed_text, SMLSIZE)
 
-  lcd.drawText(4,48, "Max:" , SMLSIZE)
-  lcd.drawText(25,40, speed_max , DBLSIZE)
-  lcd.drawText(70,48, "km/h" , SMLSIZE)
+    average_speed_text =  string.format("Avg: %dkm/h",rnd(speed_average,0))
+    lcd.drawText(mid+h_offset,row_4+text_offset, average_speed_text, SMLSIZE)
+    
+    lcd.drawText(mid-db_width,maxRow+8, "Max:" , SMLSIZE)
+    lcd.drawText(mid-db_width/2,maxRow, speed_max , DBLSIZE)
+    lcd.drawText(mid+db_width/2,maxRow+8, "km/h" , SMLSIZE)
 
 
 end
