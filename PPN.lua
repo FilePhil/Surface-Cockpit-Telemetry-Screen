@@ -37,7 +37,7 @@ local lqi_current = 0
 local bat_id = 0
 local bat_value = 0
 local bat_percent = 0
-local bat_min = 0
+local bat_min = 100
 local bat_hv = false
 
 -----------------------------------------------------------------
@@ -133,7 +133,10 @@ local function background()
   -- Get Battery
   bat_value = getValue(bat_id)
   bat_percent = getCellPercent(bat_value)
-
+  
+  if bat_value > 1 then
+    bat_min = math.min(bat_min,bat_value)
+  end 
 
 end
 
@@ -152,11 +155,6 @@ local function run(event)
 
 	end 	
 	
-	-- create screen
-	
-  --
-	
-	
   sat_text =  string.format("Sat:%2d ",sat_cnt)
 
   h_offset = 2
@@ -168,21 +166,16 @@ local function run(event)
   row_4 = 43
   row_5 = 55
   mid = 63
-  maxRow = 36
+
   db_width = 42
   db_height = 16
 
   --Lines
-  --lcd.drawLine(0,row_0,LCD_W,row_0, SOLID, FORCE)	
-  lcd.drawLine(0,row_1,LCD_W,row_1, SOLID, FORCE)	
   lcd.drawLine(LCD_W/2,row_2,LCD_W,row_2, SOLID, FORCE)	
-  
-  lcd.drawLine(0,row_3,LCD_W,row_3, SOLID, FORCE)	
-  lcd.drawLine(0,row_5,LCD_W,row_5, SOLID, FORCE)	
+  lcd.drawLine(LCD_W/2,row_5,LCD_W,row_5, SOLID, FORCE)	
 
-  lcd.drawLine(LCD_W/2,row_4,LCD_W,row_4, SOLID, FORCE)	
-
-  lcd.drawLine(LCD_W/2,row_1,LCD_W/2,row_5, SOLID, FORCE)	
+  lcd.drawLine(LCD_W/2,row_1,LCD_W/2,row_3-1, SOLID, FORCE)	
+  lcd.drawLine(LCD_W/2,row_4,LCD_W/2,LCD_H, SOLID, FORCE)	
   
   
   -- General Row
@@ -191,7 +184,7 @@ local function run(event)
   lcd.drawText(h_offset,row_0+text_offset,row_0_text ,SMLSIZE + INVERS)		
  
 
-  -- Battery Information
+  -- Draw Battery Information
   big_left = h_offset*10
 
   lcd.drawText(h_offset,row_2-text_offset, "Bat:" , SMLSIZE)
@@ -201,22 +194,34 @@ local function run(event)
 
   lcd.drawText(big_left+h_offset*4+db_width/2,row_2-6, "%" , MIDSIZE)
 
-  bat_value_text =  string.format("Bat:%2.2fV",bat_value)
-  lcd.drawText(LCD_W/2 + h_offset,row_2+text_offset,bat_value_text ,SMLSIZE)	
+  bat_value_text =  string.format("Now: %2.2fV",bat_value)
+  lcd.drawText(LCD_W/2 + h_offset,row_1+text_offset,bat_value_text ,SMLSIZE)	
+
+  bat_min_text =  string.format("Min: %2.2fV",bat_min)
+  lcd.drawText(LCD_W/2 + h_offset,row_2+text_offset,bat_min_text ,SMLSIZE)	
   	
+  -- Second Header with Speed Info
+  lcd.drawFilledRectangle(0,row_3, LCD_W, row_4-row_3, GREY_DEFAULT)
+
+
+  -- General Row
+
+  row_3_text =  string.format("Dist: %3.2f km",0.2)
+  lcd.drawText(h_offset,row_3+text_offset,row_3_text ,SMLSIZE + INVERS)		
+
   
-    current_speed_text =  string.format("Spd: %dkm/h",rnd(speed_current,0))
-    lcd.drawText(h_offset,row_5+text_offset, current_speed_text, SMLSIZE)
+  current_speed_text =  string.format("Now: %dkm/h",rnd(speed_current,0))
+  lcd.drawText(LCD_W/2 + h_offset,row_4+text_offset,current_speed_text ,SMLSIZE)	
 
-    average_speed_text =  string.format("Avg: %dkm/h",rnd(speed_average,0))
-    lcd.drawText(mid+h_offset,row_5+text_offset, average_speed_text, SMLSIZE)
-    
-    lcd.drawText(h_offset,maxRow, "Max" , SMLSIZE)
-    lcd.drawText(h_offset,maxRow+8, "km/h" , SMLSIZE)
-
-    lcd.drawText(big_left+h_offset,maxRow, speed_max , DBLSIZE)
+  average_speed_text =  string.format("Avg: %dkm/h",rnd(speed_average,0))
+  lcd.drawText(LCD_W/2 + h_offset,row_5+text_offset,average_speed_text ,SMLSIZE)	
 
 
+  -- Draw max speed
+  lcd.drawText(h_offset,row_4+4, "Max:" , SMLSIZE)
+  lcd.drawText(h_offset,row_4+12, "km/h" , SMLSIZE)
+
+  lcd.drawText(big_left+h_offset  ,row_4+4, speed_max , DBLSIZE)
 
 end
  
