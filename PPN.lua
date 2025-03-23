@@ -252,14 +252,14 @@ local function run(event)
   bat_min_text =  string.format("Min: %2.2fV",bat_min)
   lcd.drawText(LCD_W/2 + h_offset,row_2+text_offset,bat_min_text ,SMLSIZE)	
   	
-  -- Second Header with Speed Info
+  -- Second Header with Distance Info
   lcd.drawFilledRectangle(0,row_3, LCD_W, row_4-row_3, GREY_DEFAULT)
 
 
   -- General Row
 
-  row_3_text =  string.format("Dist: %3.2f km",0.2)
-  lcd.drawText(h_offset,row_3+text_offset,row_3_text ,SMLSIZE + INVERS)		
+  row_3_text =  string.format("Dist: %3.2f km Ev:%d",rnd(dist_value/1000.0,2),event)
+  lcd.drawText(1,row_3+text_offset,row_3_text ,SMLSIZE + INVERS)		
 
   
   current_speed_text =  string.format("Now: %dkm/h",rnd(speed_current,0))
@@ -270,8 +270,8 @@ local function run(event)
 
 
   -- Draw max speed
-  lcd.drawText(h_offset,row_4+4, "Max:" , SMLSIZE)
-  lcd.drawText(h_offset,row_4+12, "km/h" , SMLSIZE)
+  lcd.drawText(1,row_4+4, "Max:" , SMLSIZE)
+  lcd.drawText(1,row_4+12, "km/h" , SMLSIZE)
 
   lcd.drawText(big_left+h_offset  ,row_4+4, speed_max , DBLSIZE)
 
