@@ -20,6 +20,8 @@
 -- Telemetry and GPS Handling based on mosch's work https://github.com/moschotto/OpenTX_GPS_Telemetry
 
 local sat_cnt = 0
+local sat_min_cnt = 5 --Set the Minimum for accurate Measurements
+
 local gspd_id = 0
 local speed_current = 0
 local speed_max = 0
@@ -30,14 +32,19 @@ local speed_average = 0
 local lqi_id = 0
 local lqi_current = 0
 
+local dist_id = 0
+local dist_value = 0
+
 local bat_id = 0
 local bat_value = 0
 local bat_percent = 0
 local bat_min = 100
-local bat_hv = false
+local bat_cell_max_v = 4.2
+local bat_cell_cnt = 0
 
+local draw_tick = 0
+local draw_flip = false
 -----------------------------------------------------------------
-
 
 local function getCellPercent(cellValue)
   if cellValue == nil then
@@ -82,7 +89,13 @@ local function rnd(v,d)
 	end
 end
 
-
+local function updateFlip()
+  draw_tick = draw_tick +1
+  if draw_tick > 15 then 
+    draw_tick = 0 
+    draw_flip = not draw_flip
+  end
+end
 
 local function getTelemetryId(name)    
 	field = getFieldInfo(name)
@@ -100,46 +113,75 @@ local function init()
   
   lqi_id = getTelemetryId("RQly")
   bat_id = getTelemetryId("RxBt")
-	
+
+	dist_id = getTelemetryId("DIST")
   --if Stats can't be read, try to read Tmp2 (number of satellites SBUS/FRSKY)
 	if (gpssatId == -1) then gpssatId = getTelemetryId("Tmp2") end	
 end
 
 
 local function background()
-  counter = counter +1
+
   -- Get GPS related data
   sat_cnt = getValue(gpssatId)
-  -- read out the Speed and Calculate the max and average
-  speed_current = rnd(getValue(gspd_id),1)
-  if speed_current > 1/10 then
-    speed_sum = speed_sum + speed_current
-    speed_cnt = speed_cnt+1
-  end
 
-  if speed_cnt > 0 then
-    speed_average = rnd(speed_sum / speed_cnt,1)
-  end 
+  if sat_cnt > sat_min_cnt then
+    -- read out the Speed and Calculate the max and average
+    speed_current = rnd(getValue(gspd_id),1)
 
-  speed_max = math.max(speed_max,speed_current)
+    if speed_current > 0.1 then
+      speed_sum = speed_sum + speed_current
+      speed_cnt = speed_cnt+1
+    end
+
+    if speed_cnt > 0 then
+      speed_average = rnd(speed_sum / speed_cnt,1)
+    end 
+
+    speed_max = math.max(speed_max,speed_current)
+
+    --Get Distance 
+    dist_value = getValue(dist_id)
+  else
+    speed_current = 0
+    dist_value = 0
+  end     
 
   -- Get Link Quality
   lqi_current = getValue(lqi_id)
 
   -- Get Battery
   bat_value = getValue(bat_id)
-  bat_percent = getCellPercent(bat_value)
-  
-  if bat_value > 1 then
-    bat_min = math.min(bat_min,bat_value)
-  end 
 
+  if bat_value > 1 then
+
+    -- Use Glbal Variable G9 as the Cell Count
+    bat_cell_cnt = math.max(model.getGlobalVariable( 8, 0),0) 
+
+    if bat_cell_cnt > 0 then
+      bat_value = bat_value / bat_cell_cnt
+    end
+    -- Only Calcualte the Percentage if the value is in the correct Range
+    if bat_value <= bat_cell_max_v then 
+      bat_percent = getCellPercent(bat_value)
+    else
+      bat_percent = 0
+    end
+
+    bat_min = math.min(bat_min,bat_value)
+  else
+    bat_value = 0
+  end  
+
+
+  
 end
 
 --main function 
 local function run(event)  
 	lcd.clear()  
 	background() 
+  updateFlip()
 	
 	--reset telemetry data / total distance on "long press enter"
 	if event == EVT_ENTER_LONG then
@@ -150,8 +192,9 @@ local function run(event)
     speed_max = 0
 
 	end 	
-	
-  sat_text =  string.format("Sat:%2d ",sat_cnt)
+
+
+
 
   h_offset = 2
   text_offset = 2
@@ -176,16 +219,29 @@ local function run(event)
   
   -- General Row
   lcd.drawFilledRectangle(0,0, LCD_W, row_1, GREY_DEFAULT)
-  row_0_text =  string.format("Sat:%2d  LQI:%3d %%  TM: 00:00:00",sat_cnt,lqi_current)
-  lcd.drawText(h_offset,row_0+text_offset,row_0_text ,SMLSIZE + INVERS)		
- 
+  
+  if sat_cnt < sat_min_cnt and draw_flip then
+    sat_text =  string.format("NoGPSFix",sat_cnt)
+  else
+    sat_text =  string.format("Sat: %2d ",sat_cnt)
+  end
+
+  lcd.drawText(1,row_0 + text_offset,sat_text ,SMLSIZE + INVERS)	
+  
+  row_0_text =  string.format("LQI:%3d%% TM:00:00:00",lqi_current)
+  lcd.drawText(h_offset*21,row_0 + text_offset,row_0_text ,SMLSIZE + INVERS)		
 
   -- Draw Battery Information
   big_left = h_offset*10
 
-  lcd.drawText(h_offset,row_2-text_offset, "Bat:" , SMLSIZE)
+  lcd.drawText(1,row_2-text_offset, "Bat:" , SMLSIZE)
 
-  bat_percent_text =  string.format("%3d",bat_percent)
+  if bat_value == 0 then
+    bat_percent_text =  string.format("---")
+  else
+    bat_percent_text =  string.format("%3d",bat_percent)
+  end 
+
   lcd.drawText(big_left,row_2-db_height/2, bat_percent_text , DBLSIZE)
 
   lcd.drawText(big_left+h_offset*4+db_width/2,row_2-6, "%" , MIDSIZE)
