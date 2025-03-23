@@ -1,7 +1,7 @@
 ---- #########################################################################
 ---- #                                                                       #
----- # Telemetry Widget for EdgeTX Radios                                    #
----- # Copyright (C) EdgeTX                                                  #
+---- # Telemetry Screen for EdgeTX Radios                                    #
+---- # Copyright (C) FilePhil                                                #
 -----#                                                                       #
 ---- # License GPLv2: http://www.gnu.org/licenses/gpl-2.0.html               #
 ---- #                                                                       #
@@ -16,12 +16,8 @@
 ---- #                                                                       #
 ---- #########################################################################
 
--- Widget to display the levels of lipo/HVLipo battery with mAh Used based on battery voltage
--- JRWieland
--- Date: 2024
-local app_name = "Batt/mAh"
-local app_ver = "1.0"
-local counter = 0
+-- Battery Percent Calculation bases on JRWieland's work: https://github.com/jrwieland/Battery-mAh
+-- Telemetry and GPS Handling based on mosch's work https://github.com/moschotto/OpenTX_GPS_Telemetry
 
 local sat_cnt = 0
 local gspd_id = 0
