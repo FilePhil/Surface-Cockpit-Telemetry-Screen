@@ -180,6 +180,30 @@ local function init()
     
   end
 
+local function reset()
+  --- Set all Values to the Defaults 
+  speed_current = 0
+  speed_sum = 0
+  speed_cnt = 1
+  speed_average = 0
+  speed_max = 0
+
+  bat_value = 0
+  bat_percent = 0
+  bat_min = 100
+
+  inital_time = 0
+
+  dist_value = 0
+
+  lqi_current = 0
+
+  log_last_write = 0
+  log_row = 0
+
+end
+
+
 local function background()
 
   -- Get GPS related data
@@ -251,15 +275,10 @@ local function run(event)
   updateFlip()
 	
 	--reset telemetry data / total distance on "long press enter"
-	if event == EVT_ENTER_LONG then
-    speed_current = 0
-    speed_sum = 0
-    speed_cnt = 1
-    speed_average = 0
-    speed_max = 0
-	end 	
+  if draw_first  or event == EVT_ENTER_LONG then
+   
+    reset()
 
-  if draw_first then
     -- Set Filename for the Log File
     date_table = getDateTime()
     date_text = string.format("%d-%d-%d",date_table["year"],date_table["mon"],date_table["day"])
