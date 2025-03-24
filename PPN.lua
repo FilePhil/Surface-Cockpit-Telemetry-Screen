@@ -16,8 +16,8 @@
 ---- #                                                                       #
 ---- #########################################################################
 
--- Battery Percent Calculation bases on JRWieland's work: https://github.com/jrwieland/Battery-mAh
--- Telemetry and GPS Handling based on mosch's work https://github.com/moschotto/OpenTX_GPS_Telemetry
+-- Battery Percent Calculation bases on work from JRWieland: https://github.com/jrwieland/Battery-mAh
+-- GPS Handling based on work from mosch: https://github.com/moschotto/OpenTX_GPS_Telemetry
 
 ----------------------------------
 -- Global Variables
@@ -80,6 +80,7 @@ big_left = h_offset*10
 ----------------------------------
 
 local function SecondsToClock(seconds)
+  --format the Timer Values form Seconds into Clock Format
   local seconds = tonumber(seconds)
   if seconds <= 0 then
     return "00:00:00";
@@ -103,7 +104,7 @@ local function write_log()
 			log_row = 0		
     end		
 
-    if log_row == 0 then --3h of recording
+    if log_row == 0 then
 			--clear log
       
 			file = io.open(log_filename, "w") 
@@ -359,8 +360,6 @@ local function run(event)
   lcd.drawText(h_offset*21,row_0 + text_offset,row_0_text ,SMLSIZE + INVERS)		
 
   -- Draw Battery Information
-  
-
   lcd.drawText(1,row_2-text_offset, "Bat:" , SMLSIZE)
 
   -- print "---" when the Battery Reading is to low
