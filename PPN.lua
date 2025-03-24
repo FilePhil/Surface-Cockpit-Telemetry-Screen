@@ -104,24 +104,25 @@ end
 
 
 
+
 local function getCellPercent(cellValue)
   if cellValue == nil then
     return 0
   end
   local result = 0;
 
-lipoValue = {
-      {{3.000,0},{3.093,1},{3.196,2},{3.301,3},{3.401,4},{3.477,5},{3.544,6},{3.601,7},{3.637,8},{3.664,9},{3.679,10}},
-      {{3.683,11},{3.689,12},{3.692,13},{3.705,14},{3.710,15},{3.713,16},{3.715,17},{3.720,18},{3.731,19},{3.735,20}},
-      {{3.744,21},{3.753,22},{3.756,23},{3.758,24},{3.762,25},{3.767,26},{3.774,27},{3.780,28},{3.783,29},{3.786,30}},
-      {{3.789,31},{3.794,32},{3.797,33},{3.800,34},{3.802,35},{3.805,36},{3.808,37},{3.811,38},{3.815,39},{3.818,40}},
-      {{3.822,41},{3.825,42},{3.829,43},{3.833,44},{3.836,45},{3.840,46},{3.843,47},{3.847,48},{3.850,49},{3.854,50}},
-      {{3.857,51},{3.860,52},{3.863,53},{3.866,54},{3.870,55},{3.874,56},{3.879,57},{3.888,58},{3.893,59},{3.897,60}},
-      {{3.902,61},{3.906,62},{3.911,63},{3.918,64},{3.923,65},{3.928,66},{3.939,67},{3.943,68},{3.949,69},{3.955,70}},
-      {{3.961,71},{3.968,72},{3.974,73},{3.981,74},{3.987,75},{3.994,76},{4.001,77},{4.007,78},{4.014,79},{4.021,80}},
-      {{4.029,81},{4.036,82},{4.044,83},{4.052,84},{4.062,85},{4.074,86},{4.085,87},{4.095,88},{4.105,89},{4.111,90}},
-      {{4.116,91},{4.120,92},{4.125,93},{4.129,94},{4.135,95},{4.145,96},{4.176,97},{4.179,98},{4.193,99},{4.200,100}},
-      }
+  lipoValue = {
+        {{3.000,0},{3.093,1},{3.196,2},{3.301,3},{3.401,4},{3.477,5},{3.544,6},{3.601,7},{3.637,8},{3.664,9},{3.679,10}},
+        {{3.683,11},{3.689,12},{3.692,13},{3.705,14},{3.710,15},{3.713,16},{3.715,17},{3.720,18},{3.731,19},{3.735,20}},
+        {{3.744,21},{3.753,22},{3.756,23},{3.758,24},{3.762,25},{3.767,26},{3.774,27},{3.780,28},{3.783,29},{3.786,30}},
+        {{3.789,31},{3.794,32},{3.797,33},{3.800,34},{3.802,35},{3.805,36},{3.808,37},{3.811,38},{3.815,39},{3.818,40}},
+        {{3.822,41},{3.825,42},{3.829,43},{3.833,44},{3.836,45},{3.840,46},{3.843,47},{3.847,48},{3.850,49},{3.854,50}},
+        {{3.857,51},{3.860,52},{3.863,53},{3.866,54},{3.870,55},{3.874,56},{3.879,57},{3.888,58},{3.893,59},{3.897,60}},
+        {{3.902,61},{3.906,62},{3.911,63},{3.918,64},{3.923,65},{3.928,66},{3.939,67},{3.943,68},{3.949,69},{3.955,70}},
+        {{3.961,71},{3.968,72},{3.974,73},{3.981,74},{3.987,75},{3.994,76},{4.001,77},{4.007,78},{4.014,79},{4.021,80}},
+        {{4.029,81},{4.036,82},{4.044,83},{4.052,84},{4.062,85},{4.074,86},{4.085,87},{4.095,88},{4.105,89},{4.111,90}},
+        {{4.116,91},{4.120,92},{4.125,93},{4.129,94},{4.135,95},{4.145,96},{4.176,97},{4.179,98},{4.193,99},{4.200,100}},
+        }
 
 
   local _percentSplit = lipoValue
@@ -165,23 +166,24 @@ local function getTelemetryId(name)
 end
 
 local function init()  				
-	gspd_id = getTelemetryId("GSpd")
-
-	gpssatId = getTelemetryId("Sats")
+    gspd_id = getTelemetryId("GSpd")
+    gps_id = getTelemetryId("GPS")
+    
+    sat_id = getTelemetryId("Sats")
+    
+    lqi_id = getTelemetryId("RQly")
+    bat_id = getTelemetryId("RxBt")
   
-  lqi_id = getTelemetryId("RQly")
-  bat_id = getTelemetryId("RxBt")
-
-	dist_id = getTelemetryId("DIST")
-  --if Stats can't be read, try to read Tmp2 (number of satellites SBUS/FRSKY)
-	if (gpssatId == -1) then gpssatId = getTelemetryId("Tmp2") end	
-end
-
+    dist_id = getTelemetryId("DIST")
+    --if Stats can't be read, try to read Tmp2 (number of satellites SBUS/FRSKY)
+    if (sat_id == -1) then sat_id = getTelemetryId("Tmp2") end	
+    
+  end
 
 local function background()
 
   -- Get GPS related data
-  sat_cnt = getValue(gpssatId)
+  sat_cnt = getValue(sat_id)
 
   if sat_cnt > sat_min_cnt then
     -- read out the Speed and Calculate the max and average
@@ -215,7 +217,7 @@ local function background()
   end     
 
   -- Get Link Quality
-  lqi_current = getValue(lqi_id)
+  lqi_current = 100--getValue(lqi_id)
 
   -- Get Battery
   bat_value = getValue(bat_id)
@@ -228,6 +230,7 @@ local function background()
     if bat_cell_cnt > 0 then
       bat_value = bat_value / bat_cell_cnt
     end
+
     -- Only Calcualte the Percentage if the value is in the correct Range
     if bat_value <= bat_cell_max_v then 
       bat_percent = getCellPercent(bat_value)
@@ -239,9 +242,6 @@ local function background()
   else
     bat_value = 0
   end  
-
-
-  
 end
 
 --main function 
@@ -306,7 +306,7 @@ local function run(event)
 
   lcd.drawText(1,row_0 + text_offset,sat_text ,SMLSIZE + INVERS)	
   
-  row_0_text =  string.format("LQI:%3d%% TM:00:00:00",lqi_current)
+  row_0_text =  string.format("LQI:%3d%% TM:%s",lqi_current, SecondsToClock(now))
   lcd.drawText(h_offset*21,row_0 + text_offset,row_0_text ,SMLSIZE + INVERS)		
 
   -- Draw Battery Information
@@ -336,7 +336,7 @@ local function run(event)
 
   -- General Row
 
-  row_3_text =  string.format("Dist: %3.2f km Ev:%d",rnd(dist_value/1000.0,2),event)
+  row_3_text =  string.format("Dist: %3.2f km",rnd(dist_value/1000.0,2))
   lcd.drawText(1,row_3+text_offset,row_3_text ,SMLSIZE + INVERS)		
 
   
