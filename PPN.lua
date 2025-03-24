@@ -261,7 +261,7 @@ local function background()
   end     
 
   -- Get Link Quality
-  lqi_current = 100--getValue(lqi_id)
+  lqi_current = getValue(lqi_id)
 
   -- Get Battery Value
   bat_value = getValue(bat_id)
