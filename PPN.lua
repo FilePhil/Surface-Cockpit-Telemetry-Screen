@@ -19,6 +19,8 @@
 -- Battery Percent Calculation bases on JRWieland's work: https://github.com/jrwieland/Battery-mAh
 -- Telemetry and GPS Handling based on mosch's work https://github.com/moschotto/OpenTX_GPS_Telemetry
 
+----------------------------------
+-- Global Variables
 local sat_cnt = 0
 local sat_min_cnt = 5 --Set the Minimum for accurate Measurements
 
@@ -55,9 +57,26 @@ local now = 0
 local date_table = 0
 local inital_time = 0
 
+----------------------------------
+-- Drawing offsets
+h_offset = 2
+text_offset = 2
+row_0 = 0
+row_1 = 10
+row_2 = 21
+row_3 = 32
+row_4 = 43
+row_5 = 55
+mid = 63
+
+db_width = 42
+db_height = 16
+
+big_left = h_offset*10
+
+----------------------------------
 
 local function SecondsToClock(seconds)
- 
   local seconds = tonumber(seconds)
   if seconds <= 0 then
     return "00:00:00";
@@ -75,7 +94,7 @@ local function write_log()
  
   if log_last_write + log_write_wait_time <= now then
 	
-		time_power_on = SecondsToClock(now) 
+		time_text = SecondsToClock(now) 
      
     if log_row >= 10800 then --3h of recording
 			log_row = 0		
@@ -93,7 +112,7 @@ local function write_log()
 		file = io.open(log_filename, "a")    				
     
     row_template = "%s,%s,%d,%0.6f,%0.6f,%d,%0.2f,%0.1f,%0.1f,%d\r\n"
-    row = string.format(row_template,date_text, time_power_on,log_row, gps_lat, gps_lon, sat_cnt, dist_value, speed_current, speed_max, bat_percent)
+    row = string.format(row_template,date_text, time_text,log_row, gps_lat, gps_lon, sat_cnt, dist_value, speed_current, speed_max, bat_percent)
     
     io.write(file, row)
    
@@ -102,15 +121,16 @@ local function write_log()
 	end	  
 end
 
-
-
-
 local function getCellPercent(cellValue)
+  -- Calculate the Cell Percent based on the Discharing Voltage Curve
+  -- Based on https://github.com/jrwieland/Battery-mAh
+
   if cellValue == nil then
     return 0
   end
   local result = 0;
 
+  -- Curve of 4.2V
   lipoValue = {
         {{3.000,0},{3.093,1},{3.196,2},{3.301,3},{3.401,4},{3.477,5},{3.544,6},{3.601,7},{3.637,8},{3.664,9},{3.679,10}},
         {{3.683,11},{3.689,12},{3.692,13},{3.705,14},{3.710,15},{3.713,16},{3.715,17},{3.720,18},{3.731,19},{3.735,20}},
@@ -122,8 +142,7 @@ local function getCellPercent(cellValue)
         {{3.961,71},{3.968,72},{3.974,73},{3.981,74},{3.987,75},{3.994,76},{4.001,77},{4.007,78},{4.014,79},{4.021,80}},
         {{4.029,81},{4.036,82},{4.044,83},{4.052,84},{4.062,85},{4.074,86},{4.085,87},{4.095,88},{4.105,89},{4.111,90}},
         {{4.116,91},{4.120,92},{4.125,93},{4.129,94},{4.135,95},{4.145,96},{4.176,97},{4.179,98},{4.193,99},{4.200,100}},
-        }
-
+      }
 
   local _percentSplit = lipoValue
   for i1, v1 in ipairs(_percentSplit) do
@@ -149,6 +168,7 @@ local function rnd(v,d)
 end
 
 local function updateFlip()
+  -- Interal Timer to show different Content
   draw_tick = draw_tick +1
   if draw_tick > 15 then 
     draw_tick = 0 
@@ -166,19 +186,19 @@ local function getTelemetryId(name)
 end
 
 local function init()  				
-    gspd_id = getTelemetryId("GSpd")
-    gps_id = getTelemetryId("GPS")
-    
-    sat_id = getTelemetryId("Sats")
-    
-    lqi_id = getTelemetryId("RQly")
-    bat_id = getTelemetryId("RxBt")
+  gspd_id = getTelemetryId("GSpd")
+  gps_id = getTelemetryId("GPS")
   
-    dist_id = getTelemetryId("DIST")
-    --if Stats can't be read, try to read Tmp2 (number of satellites SBUS/FRSKY)
-    if (sat_id == -1) then sat_id = getTelemetryId("Tmp2") end	
-    
-  end
+  sat_id = getTelemetryId("Sats")
+  
+  lqi_id = getTelemetryId("RQly")
+  bat_id = getTelemetryId("RxBt")
+
+  dist_id = getTelemetryId("DIST")
+  --if Stats can't be read, try to read Tmp2 (number of satellites SBUS/FRSKY)
+  if (sat_id == -1) then sat_id = getTelemetryId("Tmp2") end	
+
+end
 
 local function reset()
   --- Set all Values to the Defaults 
@@ -229,12 +249,12 @@ local function background()
 
     --Get Postition
     gps_pos = getValue(gps_id)
-		
-      if (type(gps_pos) == "table") then 			
-        gps_lat = rnd(gps_pos["lat"],6)
-        gps_lon = rnd(gps_pos["lon"],6)		
+    
+    if (type(gps_pos) == "table") then 			
+      gps_lat = rnd(gps_pos["lat"],6)
+      gps_lon = rnd(gps_pos["lon"],6)		
+    end
 
-      end
   else
     speed_current = 0
     dist_value = 0
@@ -243,26 +263,28 @@ local function background()
   -- Get Link Quality
   lqi_current = 100--getValue(lqi_id)
 
-  -- Get Battery
+  -- Get Battery Value
   bat_value = getValue(bat_id)
 
-  if bat_value > 1 then
+  if bat_value > 1 then -- Minimal Value
 
-    -- Use Glbal Variable G9 as the Cell Count
+    -- Use Global Variable G9 as the Cell Count
     bat_cell_cnt = math.max(model.getGlobalVariable( 8, 0),0) 
 
     if bat_cell_cnt > 0 then
       bat_value = bat_value / bat_cell_cnt
     end
 
-    -- Only Calcualte the Percentage if the value is in the correct Range
+    -- Only Calculate the Percentage if the value is in the correct Range
     if bat_value <= bat_cell_max_v then 
       bat_percent = getCellPercent(bat_value)
     else
       bat_percent = 0
     end
 
+    -- Log minimal Battery Voltage
     bat_min = math.min(bat_min,bat_value)
+
   else
     bat_value = 0
   end  
@@ -280,31 +302,17 @@ local function run(event)
     reset()
 
     -- Set Filename for the Log File
+    inital_time = getGlobalTimer()["session"]
     date_table = getDateTime()
     date_text = string.format("%d-%d-%d",date_table["year"],date_table["mon"],date_table["day"])
     time_text = string.format("%d-%d-%d",date_table["hour"],date_table["min"],date_table["sec"])
 
     log_filename = string.format("/LOGS/log_%s_%s.csv",date_text,time_text)
 
-    inital_time = getGlobalTimer()["session"]
-
     draw_first = false
   else
     write_log()
   end
-
-  h_offset = 2
-  text_offset = 2
-  row_0 = 0
-  row_1 = 10
-  row_2 = 21
-  row_3 = 32
-  row_4 = 43
-  row_5 = 55
-  mid = 63
-
-  db_width = 42
-  db_height = 16
 
   --Lines
   lcd.drawLine(LCD_W/2,row_2,LCD_W,row_2, SOLID, FORCE)	
@@ -317,6 +325,7 @@ local function run(event)
   -- General Row
   lcd.drawFilledRectangle(0,0, LCD_W, row_1, GREY_DEFAULT)
   
+  -- Satelite Info
   if sat_cnt < sat_min_cnt and draw_flip then
     sat_text =  string.format("NoGPSFix",sat_cnt)
   else
@@ -325,15 +334,17 @@ local function run(event)
 
   lcd.drawText(1,row_0 + text_offset,sat_text ,SMLSIZE + INVERS)	
   
+  -- General Info
   row_0_text =  string.format("LQI:%3d%% TM:%s",lqi_current, SecondsToClock(now))
   lcd.drawText(h_offset*21,row_0 + text_offset,row_0_text ,SMLSIZE + INVERS)		
 
   -- Draw Battery Information
-  big_left = h_offset*10
+  
 
   lcd.drawText(1,row_2-text_offset, "Bat:" , SMLSIZE)
 
-  if bat_value == 0 then
+  -- print "---" when the Battery Reading is to low
+  if bat_value < 2 then
     bat_percent_text =  string.format("---")
   else
     bat_percent_text =  string.format("%3d",bat_percent)
@@ -352,19 +363,15 @@ local function run(event)
   -- Second Header with Distance Info
   lcd.drawFilledRectangle(0,row_3, LCD_W, row_4-row_3, GREY_DEFAULT)
 
-
-  -- General Row
-
   row_3_text =  string.format("Dist: %3.2f km",rnd(dist_value/1000.0,2))
   lcd.drawText(1,row_3+text_offset,row_3_text ,SMLSIZE + INVERS)		
 
-  
+  -- Draw Speed Infos
   current_speed_text =  string.format("Now: %dkm/h",rnd(speed_current,0))
   lcd.drawText(LCD_W/2 + h_offset,row_4+text_offset,current_speed_text ,SMLSIZE)	
 
   average_speed_text =  string.format("Avg: %dkm/h",rnd(speed_average,0))
   lcd.drawText(LCD_W/2 + h_offset,row_5+text_offset,average_speed_text ,SMLSIZE)	
-
 
   -- Draw max speed
   lcd.drawText(1,row_4+4, "Max:" , SMLSIZE)
