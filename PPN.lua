@@ -37,6 +37,9 @@ local lqi_current = 0
 local dist_id = 0
 local dist_value = 0
 
+local lat_pre = 0
+local lon_pre = 0
+
 local bat_id = 0
 local bat_value = 0
 local bat_percent = 0
@@ -167,6 +170,19 @@ local function rnd(v,d)
 	end
 end
 
+local function calcDistance(lat_now, lon_now, lat_pre, lon_pre)
+  -- Calculate the Distance from the last reading Point
+
+	local d2r = math.pi/180
+	local d_lon = (lon_now - lon_pre) * d2r 
+	local d_lat = (lat_now - lat_pre) * d2r 
+	local a = math.pow(math.sin(d_lat/2.0), 2) + math.cos(lat_pre*d2r) * math.cos(lat_now*d2r) * math.pow(math.sin(d_lon/2.0), 2)
+	local c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+	local dist = (6371000 * c) / 1000	
+  
+	return dist
+end
+
 local function updateFlip()
   -- Interal Timer to show different Content
   draw_tick = draw_tick +1
@@ -244,15 +260,19 @@ local function background()
 
     speed_max = math.max(speed_max,speed_current)
 
-    --Get Distance 
-    dist_value = getValue(dist_id)
-
     --Get Postition
     gps_pos = getValue(gps_id)
     
     if (type(gps_pos) == "table") then 			
+      
+      -- Add Up the Distance
       gps_lat = rnd(gps_pos["lat"],6)
       gps_lon = rnd(gps_pos["lon"],6)		
+
+      dist_value = dist_value + calcDistance(gps_lat,gps_lon,lat_pre,lon_pre)
+      
+      lat_pre = gps_lat
+      lon_pre = gps_lon
     end
 
   else
@@ -363,7 +383,7 @@ local function run(event)
   -- Second Header with Distance Info
   lcd.drawFilledRectangle(0,row_3, LCD_W, row_4-row_3, GREY_DEFAULT)
 
-  row_3_text =  string.format("Dist: %3.2f km",rnd(dist_value/1000.0,2))
+  row_3_text =  string.format("Dist: %3.2f km",rnd(dist_value,2))
   lcd.drawText(1,row_3+text_offset,row_3_text ,SMLSIZE + INVERS)		
 
   -- Draw Speed Infos
