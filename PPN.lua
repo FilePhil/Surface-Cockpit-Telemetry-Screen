@@ -44,7 +44,65 @@ local bat_cell_cnt = 0
 
 local draw_tick = 0
 local draw_flip = false
------------------------------------------------------------------
+local draw_first = true
+
+local log_write_wait_time = 1
+local log_last_write = 0
+local log_row = 0
+local log_filename = "/LOGS/log.csv"
+
+local now = 0
+local date_table = 0
+local inital_time = 0
+
+
+local function SecondsToClock(seconds)
+ 
+  local seconds = tonumber(seconds)
+  if seconds <= 0 then
+    return "00:00:00";
+  else
+    hours = string.format("%02.f", math.floor(seconds/3600));
+    mins = string.format("%02.f", math.floor(seconds/60 - (hours*60)));
+    secs = string.format("%02.f", math.floor(seconds - hours*3600 - mins *60));    
+	return hours..":"..mins..":"..secs
+  end
+end
+
+local function write_log()
+
+	now = getGlobalTimer()["session"]-inital_time    
+ 
+  if log_last_write + log_write_wait_time <= now then
+	
+		time_power_on = SecondsToClock(now) 
+     
+    if log_row >= 10800 then --3h of recording
+			log_row = 0		
+    end		
+
+    if log_row == 0 then --3h of recording
+			--clear log
+      
+			file = io.open(log_filename, "w") 
+			  io.write(file,"date_table,Time,Number,LAT,LON,satellites,Distance,GPSspeed,MaxSpeed,BatteryPercent\r\n")		
+			io.close(file)				
+		end	
+
+    --write logfile		
+		file = io.open(log_filename, "a")    				
+    
+    row_template = "%s,%s,%d,%0.6f,%0.6f,%d,%0.2f,%0.1f,%0.1f,%d\r\n"
+    row = string.format(row_template,date_text, time_power_on,log_row, gps_lat, gps_lon, sat_cnt, dist_value, speed_current, speed_max, bat_percent)
+    
+    io.write(file, row)
+   
+    log_row = log_row + 1		
+		log_last_write = now
+	end	  
+end
+
+
 
 local function getCellPercent(cellValue)
   if cellValue == nil then
@@ -142,6 +200,15 @@ local function background()
 
     --Get Distance 
     dist_value = getValue(dist_id)
+
+    --Get Postition
+    gps_pos = getValue(gps_id)
+		
+      if (type(gps_pos) == "table") then 			
+        gps_lat = rnd(gps_pos["lat"],6)
+        gps_lon = rnd(gps_pos["lon"],6)		
+
+      end
   else
     speed_current = 0
     dist_value = 0
@@ -190,11 +257,22 @@ local function run(event)
     speed_cnt = 1
     speed_average = 0
     speed_max = 0
-
 	end 	
 
+  if draw_first then
+    -- Set Filename for the Log File
+    date_table = getDateTime()
+    date_text = string.format("%d-%d-%d",date_table["year"],date_table["mon"],date_table["day"])
+    time_text = string.format("%d-%d-%d",date_table["hour"],date_table["min"],date_table["sec"])
 
+    log_filename = string.format("/LOGS/log_%s_%s.csv",date_text,time_text)
 
+    inital_time = getGlobalTimer()["session"]
+
+    draw_first = false
+  else
+    write_log()
+  end
 
   h_offset = 2
   text_offset = 2
