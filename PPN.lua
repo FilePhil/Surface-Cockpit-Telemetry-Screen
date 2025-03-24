@@ -36,7 +36,8 @@ local lqi_current = 0
 
 local dist_id = 0
 local dist_value = 0
-
+local gps_lat = 0
+local gps_lon = 0
 local lat_pre = 0
 local lon_pre = 0
 
@@ -211,7 +212,6 @@ local function init()
   lqi_id = getTelemetryId("RQly")
   bat_id = getTelemetryId("RxBt")
 
-  dist_id = getTelemetryId("DIST")
   --if Stats can't be read, try to read Tmp2 (number of satellites SBUS/FRSKY)
   if (sat_id == -1) then sat_id = getTelemetryId("Tmp2") end	
 
@@ -238,6 +238,8 @@ local function reset()
   log_last_write = 0
   log_row = 0
 
+  lat_pre = gps_lat
+  lon_pre = gps_lon
 end
 
 
