@@ -53,6 +53,7 @@ To use this telemetry screen:
 ## Credit 
 - Battery Percent Calculation bases on work from JRWieland: https://github.com/jrwieland/Battery-mAh
 - GPS Handling based on work from mosch: https://github.com/moschotto/OpenTX_GPS_Telemetry
+- EdgeTX Telemetry Example https://github.com/EdgeTX
 
 ## License
 License GPLv2: http://www.gnu.org/licenses/gpl-2.0.html
