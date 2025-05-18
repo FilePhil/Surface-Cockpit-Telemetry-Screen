@@ -331,7 +331,7 @@ local function run(event)
     date_text = string.format("%d-%d-%d",date_table["year"],date_table["mon"],date_table["day"])
     time_text = string.format("%d-%d-%d",date_table["hour"],date_table["min"],date_table["sec"])
 
-    log_filename = string.format("/LOGS/log_%s_%s.csv",date_text,time_text)
+    log_filename = string.format("/LOGS/scp_log_%s_%s.csv",date_text,time_text)
 
     draw_first = false
   else
