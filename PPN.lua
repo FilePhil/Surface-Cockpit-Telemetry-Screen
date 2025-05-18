@@ -240,6 +240,10 @@ local function reset()
 
   lat_pre = gps_lat
   lon_pre = gps_lon
+
+  -- Use Global Variable G9 as the Cell Count
+  bat_cell_cnt = math.max(model.getGlobalVariable( 8, 0),0) 
+
 end
 
 
@@ -290,9 +294,6 @@ local function background()
   bat_value = getValue(bat_id)
 
   if bat_value > 1 then -- Minimal Value
-
-    -- Use Global Variable G9 as the Cell Count
-    bat_cell_cnt = math.max(model.getGlobalVariable( 8, 0),0) 
 
     if bat_cell_cnt > 0 then
       bat_value = bat_value / bat_cell_cnt
@@ -365,11 +366,12 @@ local function run(event)
   lcd.drawText(1,row_2-text_offset, "Bat:" , SMLSIZE)
 
   -- print "---" when the Battery Reading is to low
-  if bat_value < 2 then
+  if bat_value < 2 or bat_cell_cnt == 0 then
     bat_percent_text =  string.format("---")
   else
     bat_percent_text =  string.format("%3d",bat_percent)
   end 
+  bat_value_text =  string.format("Now: %2.2fV",bat_value)
 
   lcd.drawText(big_left,row_2-db_height/2, bat_percent_text , DBLSIZE)
 
