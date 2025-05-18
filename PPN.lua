@@ -52,7 +52,7 @@ local draw_tick = 0
 local draw_flip = false
 local draw_first = true
 
-local log_write_wait_time = 1
+local log_write_wait_time = 1 --seconds
 local log_last_write = 0
 local log_row = 0
 local log_filename = "/LOGS/log.csv"
@@ -359,8 +359,11 @@ local function run(event)
   lcd.drawText(1,row_0 + text_offset,sat_text ,SMLSIZE + INVERS)	
   
   -- General Info
-  row_0_text =  string.format("LQI:%3d%% TM:%s",lqi_current, SecondsToClock(now))
-  lcd.drawText(h_offset*21,row_0 + text_offset,row_0_text ,SMLSIZE + INVERS)		
+  lqi_text =  string.format("LQI:%3d%%",lqi_current)
+  lcd.drawText(h_offset*20,row_0 + text_offset,lqi_text ,SMLSIZE + INVERS)	
+  
+  row_0_text =  string.format("TM:%s",SecondsToClock(now))
+  lcd.drawText(h_offset*41,row_0 + text_offset,row_0_text ,SMLSIZE + INVERS)		
 
   -- Draw Battery Information
   lcd.drawText(1,row_2-text_offset, "Bat:" , SMLSIZE)
@@ -377,10 +380,14 @@ local function run(event)
 
   lcd.drawText(big_left+h_offset*4+db_width/2,row_2-6, "%" , MIDSIZE)
 
-  bat_value_text =  string.format("Now: %2.2fV",bat_value)
   lcd.drawText(LCD_W/2 + h_offset,row_1+text_offset,bat_value_text ,SMLSIZE)	
 
-  bat_min_text =  string.format("Min: %2.2fV",bat_min)
+  if bat_min > 99  then
+    bat_min_text =  string.format("Min: --- V")
+  else
+    bat_min_text =  string.format("Min: %2.2fV",bat_min)
+  end 
+  
   lcd.drawText(LCD_W/2 + h_offset,row_2+text_offset,bat_min_text ,SMLSIZE)	
   	
   -- Second Header with Distance Info
